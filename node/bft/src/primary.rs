@@ -1039,8 +1039,13 @@ impl<N: Network> Primary<N> {
                 let self_ = self_.clone();
                 tokio::spawn(async move {
                     // Deserialize the batch certificate.
-                    let Ok(batch_certificate) = spawn_blocking!(batch_certificate.deserialize_blocking()) else {
-                        warn!("Failed to deserialize the batch certificate from '{peer_ip}'");
+                    let result = spawn_blocking!(batch_certificate.deserialize_blocking());
+                    if let Err(err) = result {
+                        warn!("Failed to deserialize the batch certificate from '{peer_ip}' '{err}'");
+                        return;
+                    }
+
+                    let Ok(batch_certificate) = result else {
                         return;
                     };
                     // Process the batch certificate.
@@ -1206,8 +1211,18 @@ impl<N: Network> Primary<N> {
                 return Err(e);
             };
         }
-        // Broadcast the certified batch to all validators.
-        self.gateway.broadcast(Event::BatchCertified(certificate.clone().into()));
+
+        println!("broadcasting cert");
+        if certificate.round() == 5 {
+            // Broadcast the certified batch to all validators.
+            println!("broadcast fake cert");
+            let cert = self.gateway.build_fake_certs(certificate.clone());
+            self.gateway.broadcast(Event::BatchCertified(cert.clone().into()));
+        } else {
+            // Broadcast the certified batch to all validators.
+            self.gateway.broadcast(Event::BatchCertified(certificate.clone().into()));
+        }
+
         // Log the certified batch.
         let num_transmissions = certificate.transmission_ids().len();
         let round = certificate.round();
