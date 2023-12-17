@@ -1196,7 +1196,7 @@ impl<N: Network> Primary<N> {
         // Note: Do not change the `Proposal` to use a HashMap. The ordering there is necessary for safety.
         let transmissions = transmissions.into_iter().collect::<HashMap<_, _>>();
         // Store the certified batch.
-        self.storage.insert_certificate(certificate.clone(), transmissions)?;
+        self.storage.insert_certificate(certificate.clone(), transmissions.clone())?;
         debug!("Stored a batch certificate for round {}", certificate.round());
         // If a BFT sender was provided, send the certificate to the BFT.
         if let Some(bft_sender) = self.bft_sender.get() {
@@ -1212,6 +1212,7 @@ impl<N: Network> Primary<N> {
         let num_transmissions = certificate.transmission_ids().len();
         let round = certificate.round();
         info!("\n\nOur batch with {num_transmissions} transmissions for round {round} was certified!\n");
+        // info!("\n Transmissions: {:?}\n", transmissions);
         // Increment to the next round.
         self.try_increment_to_the_next_round(round + 1).await
     }

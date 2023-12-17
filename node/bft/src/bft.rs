@@ -292,6 +292,7 @@ impl<N: Network> BFT<N> {
                 return false;
             }
         };
+        // info!("\nround {} previous_committee: {:?} leader: {:?}\n", current_round, previous_committee, leader);
         // Find and set the leader certificate, if the leader was present in the current even round.
         let leader_certificate = current_certificates.iter().find(|certificate| certificate.author() == leader);
         *self.leader_certificate.write() = leader_certificate.cloned();
